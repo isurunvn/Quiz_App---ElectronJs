@@ -1,100 +1,127 @@
-const questions = [
-    {
-      question: "What is the capital of France?",
-      answers: [
-        { text: "Berlin", correct: false },
-        { text: "Madrid", correct: false },
-        { text: "Paris", correct: true },
-        { text: "Lisbon", correct: false }
-      ]
-    },
-    {
-      question: "Who is the founder of Microsoft?",
-      answers: [
-        { text: "Steve Jobs", correct: false },
-        { text: "Bill Gates", correct: true },
-        { text: "Mark Zuckerberg", correct: false },
-        { text: "Elon Musk", correct: false }
-      ]
-    },
-    {
-      question: "What does HTML stand for?",
-      answers: [
-        { text: "HyperText Markup Language", correct: true },
-        { text: "Hot Mail", correct: false },
-        { text: "HyperText Makeup Language", correct: false },
-        { text: "HyperText Markdown Language", correct: false }
-      ]
-    }
-  ];
-  
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+let apiKey;
+let genAI;
+
+// Wait for the API key from the main process
+window.electronAPI.getApiKey((key) => {
+  apiKey = key;
+  initGoogleGenerativeAI();
+});
+
+// Initialize Google Generative AI once the API key is received
+function initGoogleGenerativeAI() {
+  if (apiKey) {
+    genAI = new GoogleGenerativeAI(apiKey);
+  }
+}
+
+// Function to fetch questions from the Gemini API based on the selected category
+async function fetchQuestionsFromGemini(category) {
+  if (!genAI) {
+    console.error("Google Generative AI is not initialized");
+    return null;
+  }
+
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const prompt = `Generate a quiz with 10 questions about ${category}.`;
+
+  try {
+    const result = await model.generateContent(prompt);
+    return result.response.text(); // Assuming text is returned
+  } catch (error) {
+    console.error("Error fetching questions:", error);
+    return null;
+  }
+}
+
+// Parse the quiz questions
+function parseQuestions(responseText) {
+  if (!responseText) {
+    alert("Failed to fetch questions. Please try again.");
+    return [];
+  }
+
+  try {
+    const questionsArray = JSON.parse(responseText); // Assuming JSON structure
+    return questionsArray.map((question) => ({
+      question: question.text,
+      answers: question.options.map(option => ({
+        text: option.text,
+        correct: option.isCorrect
+      })),
+    }));
+  } catch (error) {
+    console.error("Error parsing questions:", error);
+    return [];
+  }
+}
+
+// Event listener for the 'Start Quiz' button
+document.getElementById('start-btn').addEventListener('click', async () => {
+  const category = document.getElementById('category-select').value;
+  console.log("Category selected:", category);
+
+  // Fetch and parse the quiz questions
+  const quizQuestions = await fetchQuestionsFromGemini(category);
+  const questions = parseQuestions(quizQuestions);
+
+  if (questions.length > 0) {
+    startQuiz(questions); // Start the quiz with the questions
+  }
+});
+
+// Start the quiz
+function startQuiz(questions) {
   let currentQuestionIndex = 0;
   let score = 0;
-  
-  const questionContainer = document.getElementById('question-container');
-  const answerButtons = document.getElementById('answer-buttons');
-  const nextButton = document.getElementById('next-btn');
-  const restartButton = document.getElementById('restart-btn');
-  
-  function startQuiz() {
-    score = 0;
-    currentQuestionIndex = 0;
-    nextButton.classList.add('hidden');
-    restartButton.classList.add('hidden');
-    showQuestion();
-  }
-  
-  function showQuestion() {
-    resetState();
-    const currentQuestion = questions[currentQuestionIndex];
-    questionContainer.innerText = currentQuestion.question;
-  
-    currentQuestion.answers.forEach(answer => {
-      const button = document.createElement('button');
-      button.innerText = answer.text;
-      button.classList.add('btn');
-      button.addEventListener('click', () => selectAnswer(button, answer.correct));
-      answerButtons.appendChild(button);
-    });
-  }
-  
-  function resetState() {
-    nextButton.classList.add('hidden');
-    answerButtons.innerHTML = '';
-  }
-  
-  function selectAnswer(selectedButton, isCorrect) {
-    Array.from(answerButtons.children).forEach(button => {
-      button.disabled = true;
-      if (button === selectedButton) {
-        if (isCorrect) {
-          button.classList.add('correct');
-        } else {
-          button.classList.add('wrong');
-        }
-      }
-    });
-  
-    nextButton.classList.remove('hidden');
-    if (isCorrect) score++;
-  }
-  
-  function showScore() {
-    resetState();
-    questionContainer.innerText = `You scored ${score} out of ${questions.length}!`;
-    restartButton.classList.remove('hidden');
-  }
-  
-  nextButton.addEventListener('click', () => {
+
+  // Quiz logic to display questions, handle answers, and calculate score
+  displayQuestion(questions[currentQuestionIndex]);
+
+  document.getElementById('next-btn').addEventListener('click', () => {
     currentQuestionIndex++;
     if (currentQuestionIndex < questions.length) {
-      showQuestion();
+      displayQuestion(questions[currentQuestionIndex]);
     } else {
-      showScore();
+      showResults(score, questions.length);
     }
   });
-  
-  restartButton.addEventListener('click', startQuiz);
-  
-  startQuiz();
-  
+
+  // Restart quiz logic
+  document.getElementById('restart-btn').addEventListener('click', () => {
+    currentQuestionIndex = 0;
+    score = 0;
+    startQuiz(questions);
+  });
+}
+
+// Display the current question and its answers
+function displayQuestion(question) {
+  const questionContainer = document.getElementById('question-container');
+  questionContainer.innerText = question.question;
+
+  const answerButtons = document.getElementById('answer-buttons');
+  answerButtons.innerHTML = ''; // Clear previous answers
+
+  question.answers.forEach(answer => {
+    const button = document.createElement('button');
+    button.classList.add('btn');
+    button.innerText = answer.text;
+    button.addEventListener('click', () => {
+      if (answer.correct) {
+        score++;
+      }
+      document.getElementById('next-btn').classList.remove('hidden');
+    });
+    answerButtons.appendChild(button);
+  });
+}
+
+// Show final results
+function showResults(score, totalQuestions) {
+  const questionContainer = document.getElementById('question-container');
+  questionContainer.innerHTML = `Quiz complete! You scored ${score} out of ${totalQuestions}.`;
+  document.getElementById('next-btn').classList.add('hidden');
+  document.getElementById('restart-btn').classList.remove('hidden');
+}

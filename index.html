@@ -3,16 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quiz App</title>
+  <title>BrainBuster Quiz</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="quiz-container">
     <h1>BrainBuster Quiz</h1>
+
+    <!-- Dropdown to select the category -->
+    <label for="category-select">Choose a category:</label>
+    <select id="category-select">
+      <option value="science">Science</option>
+      <option value="technology">Technology</option>
+      <option value="history">History</option>
+    </select>
+
+    <button id="start-btn" class="btn">Start Quiz</button>
+
     <div id="question-container"></div>
     <div id="answer-buttons" class="btn-group"></div>
-    <button id="next-btn" class="btn">Next</button>
-    <button id="restart-btn" class="btn">Restart</button>
+    <button id="next-btn" class="btn hidden">Next</button>
+    <button id="restart-btn" class="btn hidden">Restart</button>
   </div>
 
   <script src="renderer.js"></script>
