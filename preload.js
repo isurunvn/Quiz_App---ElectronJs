@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Expose methods to securely communicate with the main process
+// Expose methods to the renderer process
 contextBridge.exposeInMainWorld('electronAPI', {
-  getApiKey: (callback) => ipcRenderer.on('apiKey', (event, apiKey) => callback(apiKey))
+  getApiKey: () => ipcRenderer.invoke('apiKey'),
+  generateQuestions: (category) => ipcRenderer.invoke('generate-questions', category)  // Expose the generateQuestions function
 });

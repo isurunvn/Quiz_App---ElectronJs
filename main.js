@@ -1,24 +1,20 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-require('dotenv').config(); // Load environment variables
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 function createWindow() {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'), // Use preload.js
-      nodeIntegration: false, // Disable direct Node.js integration for security
-      contextIsolation: true,  // Isolate renderer context
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      enableRemoteModule: false,
+      nodeIntegration: false
     }
   });
 
   win.loadFile('index.html');
-
-  // Send API key to renderer when window is loaded
-  win.webContents.on('did-finish-load', () => {
-    win.webContents.send('apiKey', process.env.GEMINI_API_KEY);
-  });
 }
 
 app.whenReady().then(() => {
@@ -31,4 +27,27 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+// Handle API key retrieval in the main process
+ipcMain.handle('apiKey', async () => {
+  return 'AIzaSyDYdHHPiYFmba6XdWCDQbF_pT93R3zFWqw';  // Replace with your actual API key
+});
+
+// Handle question generation request in the main process
+ipcMain.handle('generate-questions', async (event, category) => {
+  try {
+    const apiKey = 'AIzaSyDYdHHPiYFmba6XdWCDQbF_pT93R3zFWqw';  // Replace with your actual API key
+    const genAI = new GoogleGenerativeAI(apiKey);
+
+    // Prepare the prompt for generating questions based on the category
+    const prompt = `Generate 5 quiz questions in the category of ${category}. Include multiple choice answers.`;
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const result = await model.generateContent(prompt);
+    return result.response.text();  // Send back the text response to the renderer
+  } catch (error) {
+    console.error("Error generating questions:", error);
+    return null;  // Send null in case of an error
+  }
 });
