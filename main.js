@@ -1,6 +1,8 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+require('dotenv').config();
+
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -31,13 +33,13 @@ app.on('window-all-closed', () => {
 
 // Handle API key retrieval in the main process
 ipcMain.handle('apiKey', async () => {
-  return 'AIzaSyDYdHHPiYFmba6XdWCDQbF_pT93R3zFWqw';  // Replace with your actual API key
+  return process.env.API_KEY;  // Replace with your actual API key
 });
 
 // Handle question generation request in the main process
 ipcMain.handle('generate-questions', async (event, category) => {
   try {
-    const apiKey = 'AIzaSyDYdHHPiYFmba6XdWCDQbF_pT93R3zFWqw';  // Replace with your actual API key
+    const apiKey = process.env.API_KEY;
     const genAI = new GoogleGenerativeAI(apiKey);
 
     // Prepare the prompt for generating questions based on the category
