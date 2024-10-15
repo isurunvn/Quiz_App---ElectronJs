@@ -66,9 +66,8 @@ function startQuiz(questions) {
   currentQuestionIndex = 0;
   score = 0;
 
-  document.getElementById('category-input').classList.add('hidden');
-  document.getElementById('question-count').classList.add('hidden');
-  document.getElementById('start-btn').classList.add('hidden');
+  // Hide the setup elements and show the question container
+  document.getElementById('setup-container').classList.add('hidden');
   document.getElementById('question-container').classList.remove('hidden');
   document.getElementById('next-btn').classList.remove('hidden');
 
@@ -146,7 +145,7 @@ document.getElementById('next-btn').addEventListener('click', nextQuestion);
 document.getElementById('restart-btn').addEventListener('click', () => {
   document.getElementById('restart-btn').classList.add('hidden');
   document.getElementById('result-container').classList.add('hidden');
-  document.getElementById('category-input').classList.remove('hidden');
-  document.getElementById('question-count').classList.remove('hidden');
-  document.getElementById('start-btn').classList.remove('hidden');
+  document.getElementById('setup-container').classList.remove('hidden');
+  document.getElementById('next-btn').classList.add('hidden');
+  document.getElementById('question-container').classList.add('hidden');
 });
