@@ -10,17 +10,17 @@
   <div class="quiz-container">
     <h1>BrainBuster Quiz</h1>
 
-    <!-- Dropdown to select the category -->
-    <label for="category-select">Choose a category:</label>
-    <select id="category-select">
-      <option value="science">Science</option>
-      <option value="technology">Technology</option>
-      <option value="history">History</option>
-      <option value="custom">Enter your own category</option> <!-- New option for custom category -->
-    </select>
+    <!-- Input to enter category -->
+    <label for="category-input">Enter a category:</label>
+    <input type="text" id="category-input" placeholder="Enter quiz category">
 
-    <!-- Input field for custom category -->
-    <input type="text" id="custom-category" class="hidden" placeholder="Enter your category">
+    <!-- Dropdown to select the number of questions -->
+    <label for="question-count">Number of questions:</label>
+    <select id="question-count">
+      <option value="3">3</option>
+      <option value="5">5</option>
+      <option value="10">10</option>
+    </select>
 
     <button id="start-btn" class="btn">Start Quiz</button>
 

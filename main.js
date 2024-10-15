@@ -3,11 +3,10 @@ const path = require('path');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
 
-
 function createWindow() {
   const win = new BrowserWindow({
-    width: 900,
-    height: 700,
+    width: 800,
+    height: 600,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -31,19 +30,18 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// Handle API key retrieval in the main process
 ipcMain.handle('apiKey', async () => {
   return process.env.API_KEY;  // Replace with your actual API key
 });
 
-// Handle question generation request in the main process
-ipcMain.handle('generate-questions', async (event, category) => {
+// Handle question generation request with category and question count
+ipcMain.handle('generate-questions', async (event, category, count) => {
   try {
     const apiKey = process.env.API_KEY;
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Prepare the prompt for generating questions based on the category
-    const prompt = `Generate 5 quiz questions in the category of ${category}. Include multiple choice answers.`;
+    // Prepare the prompt for generating the requested number of questions
+    const prompt = `Generate ${count} quiz questions in the category of ${category}. Include multiple choice answers.`;
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const result = await model.generateContent(prompt);

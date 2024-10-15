@@ -3,9 +3,9 @@ let score = 0;
 let quizQuestions = [];
 
 // Function to fetch questions from the backend
-async function fetchQuestions(category) {
+async function fetchQuestions(category, count) {
   try {
-    const response = await window.electronAPI.generateQuestions(category);
+    const response = await window.electronAPI.generateQuestions(category, count);
     const questions = parseQuestions(response);
     return questions;  // Return the parsed questions
   } catch (error) {
@@ -66,8 +66,8 @@ function startQuiz(questions) {
   currentQuestionIndex = 0;
   score = 0;
 
-  document.getElementById('category-select').classList.add('hidden');
-  document.getElementById('custom-category').classList.add('hidden');
+  document.getElementById('category-input').classList.add('hidden');
+  document.getElementById('question-count').classList.add('hidden');
   document.getElementById('start-btn').classList.add('hidden');
   document.getElementById('question-container').classList.remove('hidden');
   document.getElementById('next-btn').classList.remove('hidden');
@@ -128,35 +128,14 @@ function showResults() {
 
 // Start the quiz when the button is clicked
 document.getElementById('start-btn').addEventListener('click', async () => {
-  let category = document.getElementById('category-select').value;
+  const category = document.getElementById('category-input').value;
+  const count = document.getElementById('question-count').value;
 
-  // Check if the user selected the custom category
-  if (category === 'custom') {
-    category = document.getElementById('custom-category').value.trim();
-  }
-
-  if (!category) {
-    alert("Please enter a valid category.");
-    return;
-  }
-
-  const quizQuestions = await fetchQuestions(category);
+  const quizQuestions = await fetchQuestions(category, count);
   if (quizQuestions.length > 0) {
     startQuiz(quizQuestions);
   } else {
     alert("No questions were generated. Please try again.");
-  }
-});
-
-// Show custom category input when 'custom' is selected
-document.getElementById('category-select').addEventListener('change', () => {
-  const category = document.getElementById('category-select').value;
-  const customCategoryInput = document.getElementById('custom-category');
-  
-  if (category === 'custom') {
-    customCategoryInput.classList.remove('hidden');
-  } else {
-    customCategoryInput.classList.add('hidden');
   }
 });
 
@@ -167,6 +146,7 @@ document.getElementById('next-btn').addEventListener('click', nextQuestion);
 document.getElementById('restart-btn').addEventListener('click', () => {
   document.getElementById('restart-btn').classList.add('hidden');
   document.getElementById('result-container').classList.add('hidden');
-  document.getElementById('category-select').classList.remove('hidden');
+  document.getElementById('category-input').classList.remove('hidden');
+  document.getElementById('question-count').classList.remove('hidden');
   document.getElementById('start-btn').classList.remove('hidden');
 });
