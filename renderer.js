@@ -1,20 +1,27 @@
 let currentQuestionIndex = 0;
 let score = 0;
 let quizQuestions = [];
+let category = '';
+let count = 0;
 
-// Function to fetch questions from the backend
 async function fetchQuestions(category, count) {
   try {
     const response = await window.electronAPI.generateQuestions(category, count);
+    if (!response) {
+      throw new Error("No response from API");
+    }
     const questions = parseQuestions(response);
-    return questions;  // Return the parsed questions
+    if (questions.length === 0) {
+      throw new Error("No questions generated");
+    }
+    return questions;
   } catch (error) {
     console.error("Error fetching questions:", error);
-    return [];  // Return an empty array in case of error
+    alert(`Failed to fetch questions: ${error.message}`);
+    return null;
   }
 }
 
-// Function to parse the generated content into a usable format
 function parseQuestions(text) {
   const questions = [];
   const lines = text.split("\n").filter(line => line.trim() !== "");
@@ -60,22 +67,51 @@ function parseQuestions(text) {
   return questions;
 }
 
-// Function to start the quiz
-function startQuiz(questions) {
-  quizQuestions = questions;
-  currentQuestionIndex = 0;
-  score = 0;
+async function startQuiz() {
+  category = document.getElementById('category-input').value;
+  count = document.getElementById('question-count').value;
 
-  // Hide the setup elements and show the question container
-  document.getElementById('setup-container').classList.add('hidden');
-  document.getElementById('question-container').classList.remove('hidden');
-  document.getElementById('next-btn').classList.remove('hidden');
+  if (!category || !count) {
+    alert("Please enter a category and select the number of questions.");
+    return;
+  }
 
-  showQuestion();
+  const questions = await fetchQuestions(category, count);
+  if (questions) {
+    quizQuestions = questions;
+    resetQuizState();
+    showQuestion();
+  } else {
+    showSetup();
+  }
 }
 
-// Function to show a question
+function resetQuizState() {
+  currentQuestionIndex = 0;
+  score = 0;
+  hideAllSections();
+  document.getElementById('question-container').classList.remove('hidden');
+  document.getElementById('answer-buttons').classList.remove('hidden');
+  document.getElementById('next-btn').classList.remove('hidden');
+  document.getElementById('reattempt-btn').classList.remove('hidden');
+}
+
+function hideAllSections() {
+  const sections = ['setup-container', 'question-container', 'answer-buttons', 'next-btn', 'restart-btn', 'reattempt-btn', 'result-container'];
+  sections.forEach(id => document.getElementById(id).classList.add('hidden'));
+}
+
+function showSetup() {
+  hideAllSections();
+  document.getElementById('setup-container').classList.remove('hidden');
+}
+
 function showQuestion() {
+  if (currentQuestionIndex >= quizQuestions.length) {
+    showResults();
+    return;
+  }
+
   const questionContainer = document.getElementById('question-container');
   const answerButtons = document.getElementById('answer-buttons');
   questionContainer.innerHTML = '';
@@ -98,12 +134,14 @@ function showQuestion() {
     answerButtons.appendChild(answerLabel);
 
     answerInput.addEventListener('change', () => {
+      document.getElementById('next-btn').disabled = false;
       if (answer.correct) score++;
     });
   });
+
+  document.getElementById('next-btn').disabled = true;
 }
 
-// Function to handle the next question or show the results
 function nextQuestion() {
   currentQuestionIndex++;
   if (currentQuestionIndex < quizQuestions.length) {
@@ -113,11 +151,8 @@ function nextQuestion() {
   }
 }
 
-// Function to display the results
 function showResults() {
-  document.getElementById('question-container').classList.add('hidden');
-  document.getElementById('answer-buttons').classList.add('hidden');
-  document.getElementById('next-btn').classList.add('hidden');
+  hideAllSections();
   document.getElementById('restart-btn').classList.remove('hidden');
   document.getElementById('result-container').classList.remove('hidden');
 
@@ -125,27 +160,20 @@ function showResults() {
   resultContainer.innerHTML = `Quiz completed! Your score: ${score} / ${quizQuestions.length}`;
 }
 
-// Start the quiz when the button is clicked
-document.getElementById('start-btn').addEventListener('click', async () => {
-  const category = document.getElementById('category-input').value;
-  const count = document.getElementById('question-count').value;
+function restartQuiz() {
+  showSetup();
+}
 
-  const quizQuestions = await fetchQuestions(category, count);
-  if (quizQuestions.length > 0) {
-    startQuiz(quizQuestions);
-  } else {
-    alert("No questions were generated. Please try again.");
+async function reattemptQuiz() {
+  const questions = await fetchQuestions(category, count);
+  if (questions) {
+    quizQuestions = questions;
+    resetQuizState();
+    showQuestion();
   }
-});
+}
 
-// Move to the next question when the "Next" button is clicked
+document.getElementById('start-btn').addEventListener('click', startQuiz);
 document.getElementById('next-btn').addEventListener('click', nextQuestion);
-
-// Restart the quiz when the "Restart" button is clicked
-document.getElementById('restart-btn').addEventListener('click', () => {
-  document.getElementById('restart-btn').classList.add('hidden');
-  document.getElementById('result-container').classList.add('hidden');
-  document.getElementById('setup-container').classList.remove('hidden');
-  document.getElementById('next-btn').classList.add('hidden');
-  document.getElementById('question-container').classList.add('hidden');
-});
+document.getElementById('restart-btn').addEventListener('click', restartQuiz);
+document.getElementById('reattempt-btn').addEventListener('click', reattemptQuiz);
