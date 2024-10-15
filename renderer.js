@@ -67,6 +67,7 @@ function startQuiz(questions) {
   score = 0;
 
   document.getElementById('category-select').classList.add('hidden');
+  document.getElementById('custom-category').classList.add('hidden');
   document.getElementById('start-btn').classList.add('hidden');
   document.getElementById('question-container').classList.remove('hidden');
   document.getElementById('next-btn').classList.remove('hidden');
@@ -127,13 +128,35 @@ function showResults() {
 
 // Start the quiz when the button is clicked
 document.getElementById('start-btn').addEventListener('click', async () => {
-  const category = document.getElementById('category-select').value;
+  let category = document.getElementById('category-select').value;
+
+  // Check if the user selected the custom category
+  if (category === 'custom') {
+    category = document.getElementById('custom-category').value.trim();
+  }
+
+  if (!category) {
+    alert("Please enter a valid category.");
+    return;
+  }
 
   const quizQuestions = await fetchQuestions(category);
   if (quizQuestions.length > 0) {
     startQuiz(quizQuestions);
   } else {
     alert("No questions were generated. Please try again.");
+  }
+});
+
+// Show custom category input when 'custom' is selected
+document.getElementById('category-select').addEventListener('change', () => {
+  const category = document.getElementById('category-select').value;
+  const customCategoryInput = document.getElementById('custom-category');
+  
+  if (category === 'custom') {
+    customCategoryInput.classList.remove('hidden');
+  } else {
+    customCategoryInput.classList.add('hidden');
   }
 });
 
