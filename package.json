@@ -1,17 +1,32 @@
 {
-  "name": "quiz-app---electronjs",
+  "name": "brainbuster-quiz",
   "version": "1.0.0",
   "description": "",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.example.quizapp",
+    "files": [
+    "dist/**/*",
+    "node_modules/**/*",
+    "package.json",   
+    "main.js",
+    "preload.js",
+    "renderer.js",
+    "index.html",    
+    "style.css"
+    ]
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^32.1.2"
+    "electron": "^32.1.2",
+    "electron-builder": "^25.1.8"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
