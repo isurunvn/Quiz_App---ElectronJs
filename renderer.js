@@ -14,7 +14,7 @@ async function fetchQuestions(category, count) {
     }
     const questions = parseQuestions(response);
     if (questions.length === 0) {
-      throw new Error("No questions generated, click again 'Start Quiz' button!");
+      throw new Error("No questions generated");
     }
     return questions;
   } catch (error) {
@@ -108,6 +108,8 @@ function hideAllSections() {
 function showSetup() {
   hideAllSections();
   document.getElementById('setup-container').classList.remove('hidden');
+  // Ensure the category input is editable
+  document.getElementById('category-input').disabled = false;
 }
 
 function showQuestion() {
@@ -133,10 +135,8 @@ function showQuestion() {
     answerInput.name = 'answer';
     answerInput.value = answer.text;
     
-    // Enable radio button in review mode if it was the user's answer
     answerInput.disabled = reviewMode && userAnswers[currentQuestionIndex] !== answer.text;
     
-    // Check the radio button if it was the user's answer
     if (reviewMode && userAnswers[currentQuestionIndex] === answer.text) {
       answerInput.checked = true;
     }
@@ -200,6 +200,10 @@ function showResults() {
 
 function restartQuiz() {
   showSetup();
+  // Clear the previous category
+  document.getElementById('category-input').value = '';
+  // Set focus to the category input field
+  document.getElementById('category-input').focus();
 }
 
 async function reattemptQuiz() {
