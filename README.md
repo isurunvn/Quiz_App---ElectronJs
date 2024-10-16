@@ -7,6 +7,7 @@ Dynamic Category Selection: Enter a custom category/topic.
 Custom Question Count: Select how many questions you want to answer (3, 5, 10).
 Interactive Quiz Interface: Answer multiple-choice questions and get instant feedback on your performance.
 Score Tracking: Keep track of your score throughout the quiz and view your final results.
+
 Screenshots
 Example of the quiz interface
 ![Screenshot 2024-10-16 221139](https://github.com/user-attachments/assets/75c179e6-54c4-4195-878f-1beaaa35aa1d)
@@ -19,7 +20,7 @@ Electron: The application is built using Electron, which allows for cross-platfo
 Installation
 
 Clone the repository:
-git clone https://github.com/yourusername/brainbuster-quiz.git
+git clone https://github.com/isurunvn/brainbuster-quiz-app.git
 cd brainbuster-quiz
 
 Install dependencies:
