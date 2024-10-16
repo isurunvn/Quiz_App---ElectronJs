@@ -1,100 +1,229 @@
-const questions = [
-    {
-      question: "What is the capital of France?",
-      answers: [
-        { text: "Berlin", correct: false },
-        { text: "Madrid", correct: false },
-        { text: "Paris", correct: true },
-        { text: "Lisbon", correct: false }
-      ]
-    },
-    {
-      question: "Who is the founder of Microsoft?",
-      answers: [
-        { text: "Steve Jobs", correct: false },
-        { text: "Bill Gates", correct: true },
-        { text: "Mark Zuckerberg", correct: false },
-        { text: "Elon Musk", correct: false }
-      ]
-    },
-    {
-      question: "What does HTML stand for?",
-      answers: [
-        { text: "HyperText Markup Language", correct: true },
-        { text: "Hot Mail", correct: false },
-        { text: "HyperText Makeup Language", correct: false },
-        { text: "HyperText Markdown Language", correct: false }
-      ]
+let currentQuestionIndex = 0;
+let score = 0;
+let quizQuestions = [];
+let category = '';
+let count = 0;
+let reviewMode = false;
+let userAnswers = [];
+
+async function fetchQuestions(category, count) {
+  try {
+    const response = await window.electronAPI.generateQuestions(category, count);
+    if (!response) {
+      throw new Error("No response from API");
     }
-  ];
-  
-  let currentQuestionIndex = 0;
-  let score = 0;
-  
-  const questionContainer = document.getElementById('question-container');
-  const answerButtons = document.getElementById('answer-buttons');
-  const nextButton = document.getElementById('next-btn');
-  const restartButton = document.getElementById('restart-btn');
-  
-  function startQuiz() {
-    score = 0;
-    currentQuestionIndex = 0;
-    nextButton.classList.add('hidden');
-    restartButton.classList.add('hidden');
-    showQuestion();
+    const questions = parseQuestions(response);
+    if (questions.length === 0) {
+      throw new Error("No questions generated, click again 'Start Quiz' button!");
+    }
+    return questions;
+  } catch (error) {
+    console.error("Error fetching questions:", error);
+    alert(`Failed to fetch questions: ${error.message}`);
+    return null;
   }
-  
-  function showQuestion() {
-    resetState();
-    const currentQuestion = questions[currentQuestionIndex];
-    questionContainer.innerText = currentQuestion.question;
-  
-    currentQuestion.answers.forEach(answer => {
-      const button = document.createElement('button');
-      button.innerText = answer.text;
-      button.classList.add('btn');
-      button.addEventListener('click', () => selectAnswer(button, answer.correct));
-      answerButtons.appendChild(button);
-    });
-  }
-  
-  function resetState() {
-    nextButton.classList.add('hidden');
-    answerButtons.innerHTML = '';
-  }
-  
-  function selectAnswer(selectedButton, isCorrect) {
-    Array.from(answerButtons.children).forEach(button => {
-      button.disabled = true;
-      if (button === selectedButton) {
-        if (isCorrect) {
-          button.classList.add('correct');
-        } else {
-          button.classList.add('wrong');
-        }
+}
+
+function parseQuestions(text) {
+  const questions = [];
+  const lines = text.split("\n").filter(line => line.trim() !== "");
+
+  let currentQuestion = null;
+  let answers = [];
+
+  lines.forEach(line => {
+    const cleanedLine = line.replace(/[*#]/g, "").trim();
+    const questionMatch = cleanedLine.match(/^\d+\.\s*(.*)/);
+    
+    if (questionMatch) {
+      if (currentQuestion && answers.length > 0) {
+        questions.push({
+          question: currentQuestion,
+          answers: answers.map(answer => ({ text: answer.trim(), correct: false }))
+        });
       }
-    });
-  
-    nextButton.classList.remove('hidden');
-    if (isCorrect) score++;
-  }
-  
-  function showScore() {
-    resetState();
-    questionContainer.innerText = `You scored ${score} out of ${questions.length}!`;
-    restartButton.classList.remove('hidden');
-  }
-  
-  nextButton.addEventListener('click', () => {
-    currentQuestionIndex++;
-    if (currentQuestionIndex < questions.length) {
-      showQuestion();
+      currentQuestion = questionMatch[1].trim();
+      answers = [];
     } else {
-      showScore();
+      const answerMatch = cleanedLine.match(/^[a-d]\)\s*(.*)/);
+      if (answerMatch) {
+        answers.push(answerMatch[1].trim());
+      }
     }
   });
-  
-  restartButton.addEventListener('click', startQuiz);
-  
-  startQuiz();
-  
+
+  if (currentQuestion && answers.length > 0) {
+    questions.push({
+      question: currentQuestion,
+      answers: answers.map(answer => ({ text: answer.trim(), correct: false }))
+    });
+  }
+
+  questions.forEach(q => {
+    if (q.answers.length > 0) {
+      const correctIndex = Math.floor(Math.random() * q.answers.length);
+      q.answers[correctIndex].correct = true;
+    }
+  });
+
+  return questions;
+}
+
+async function startQuiz() {
+  category = document.getElementById('category-input').value;
+  count = document.getElementById('question-count').value;
+
+  if (!category || !count) {
+    alert("Please enter a category and select the number of questions.");
+    return;
+  }
+
+  const questions = await fetchQuestions(category, count);
+  if (questions) {
+    quizQuestions = questions;
+    resetQuizState();
+    showQuestion();
+  } else {
+    showSetup();
+  }
+}
+
+function resetQuizState() {
+  currentQuestionIndex = 0;
+  score = 0;
+  reviewMode = false;
+  userAnswers = [];
+  hideAllSections();
+  document.getElementById('question-container').classList.remove('hidden');
+  document.getElementById('answer-buttons').classList.remove('hidden');
+  document.getElementById('next-btn').classList.remove('hidden');
+  document.getElementById('reattempt-btn').classList.remove('hidden');
+}
+
+function hideAllSections() {
+  const sections = ['setup-container', 'question-container', 'answer-buttons', 'next-btn', 'restart-btn', 'reattempt-btn', 'result-container', 'view-answers-btn'];
+  sections.forEach(id => document.getElementById(id).classList.add('hidden'));
+}
+
+function showSetup() {
+  hideAllSections();
+  document.getElementById('setup-container').classList.remove('hidden');
+}
+
+function showQuestion() {
+  if (currentQuestionIndex >= quizQuestions.length) {
+    showResults();
+    return;
+  }
+
+  const questionContainer = document.getElementById('question-container');
+  const answerButtons = document.getElementById('answer-buttons');
+  questionContainer.innerHTML = '';
+  answerButtons.innerHTML = '';
+
+  const currentQuestion = quizQuestions[currentQuestionIndex];
+  const questionText = document.createElement('h3');
+  questionText.innerText = `Q${currentQuestionIndex + 1}: ${currentQuestion.question}`;
+  questionContainer.appendChild(questionText);
+
+  currentQuestion.answers.forEach((answer, index) => {
+    const answerLabel = document.createElement('label');
+    const answerInput = document.createElement('input');
+    answerInput.type = 'radio';
+    answerInput.name = 'answer';
+    answerInput.value = answer.text;
+    
+    // Enable radio button in review mode if it was the user's answer
+    answerInput.disabled = reviewMode && userAnswers[currentQuestionIndex] !== answer.text;
+    
+    // Check the radio button if it was the user's answer
+    if (reviewMode && userAnswers[currentQuestionIndex] === answer.text) {
+      answerInput.checked = true;
+    }
+
+    answerLabel.appendChild(answerInput);
+    answerLabel.appendChild(document.createTextNode(answer.text));
+    
+    if (reviewMode) {
+      if (answer.correct) {
+        answerLabel.classList.add('correct-answer');
+      }
+      if (userAnswers[currentQuestionIndex] === answer.text) {
+        if (answer.correct) {
+          answerLabel.classList.add('user-correct');
+        } else {
+          answerLabel.classList.add('user-incorrect');
+        }
+      }
+    }
+    
+    answerButtons.appendChild(answerLabel);
+
+    if (!reviewMode) {
+      answerInput.addEventListener('change', () => {
+        document.getElementById('next-btn').disabled = false;
+        userAnswers[currentQuestionIndex] = answer.text;
+        if (answer.correct) score++;
+      });
+    }
+  });
+
+  if (reviewMode) {
+    document.getElementById('next-btn').disabled = false;
+  } else {
+    document.getElementById('next-btn').disabled = !userAnswers[currentQuestionIndex];
+  }
+}
+
+function nextQuestion() {
+  currentQuestionIndex++;
+  if (currentQuestionIndex < quizQuestions.length) {
+    showQuestion();
+  } else {
+    if (reviewMode) {
+      showResults();
+    } else {
+      showResults();
+    }
+  }
+}
+
+function showResults() {
+  hideAllSections();
+  document.getElementById('restart-btn').classList.remove('hidden');
+  document.getElementById('result-container').classList.remove('hidden');
+  document.getElementById('view-answers-btn').classList.remove('hidden');
+
+  const resultContainer = document.getElementById('result-container');
+  resultContainer.innerHTML = `Quiz completed! Your score: ${score} / ${quizQuestions.length}`;
+}
+
+function restartQuiz() {
+  showSetup();
+}
+
+async function reattemptQuiz() {
+  const questions = await fetchQuestions(category, count);
+  if (questions) {
+    quizQuestions = questions;
+    resetQuizState();
+    showQuestion();
+  }
+}
+
+function viewCorrectAnswers() {
+  reviewMode = true;
+  currentQuestionIndex = 0;
+  hideAllSections();
+  document.getElementById('question-container').classList.remove('hidden');
+  document.getElementById('answer-buttons').classList.remove('hidden');
+  document.getElementById('next-btn').classList.remove('hidden');
+  document.getElementById('next-btn').textContent = currentQuestionIndex === quizQuestions.length - 1 ? 'Finish Review' : 'Next Question';
+  showQuestion();
+}
+
+document.getElementById('start-btn').addEventListener('click', startQuiz);
+document.getElementById('next-btn').addEventListener('click', nextQuestion);
+document.getElementById('restart-btn').addEventListener('click', restartQuiz);
+document.getElementById('reattempt-btn').addEventListener('click', reattemptQuiz);
+document.getElementById('view-answers-btn').addEventListener('click', viewCorrectAnswers);

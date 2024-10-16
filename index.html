@@ -3,18 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quiz App</title>
+  <title>BrainBuster Quiz</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="quiz-container">
     <h1>BrainBuster Quiz</h1>
-    <div id="question-container"></div>
+
+    <div id="setup-container">
+      <label for="category-input">Enter a category:</label>
+      <input type="text" id="category-input" placeholder="Enter quiz category/topic (ex: organic chemistry)">
+
+      <label for="question-count" class="question-count">Number of questions:</label>
+      <select id="question-count">
+        <option value="3">3</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+      </select>
+
+      <button id="start-btn" class="btn">Start Quiz</button>
+    </div>
+
+    <div id="question-container" class="hidden"></div>
     <div id="answer-buttons" class="btn-group"></div>
-    <button id="next-btn" class="btn">Next</button>
-    <button id="restart-btn" class="btn">Restart</button>
+
+    <button id="next-btn" class="btn hidden">Next Question</button>
+    <button id="restart-btn" class="btn hidden">Restart Quiz</button>
+    <button id="reattempt-btn" class="btn hidden">Reattempt Quiz</button>
+
+    <div id="result-container" class="hidden"></div>
+    <button id="view-answers-btn" class="btn hidden">View Correct Answers</button>
   </div>
 
-  <script src="renderer.js"></script>
+  <script type="module" src="renderer.js"></script>
 </body>
 </html>
