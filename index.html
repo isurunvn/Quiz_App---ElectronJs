@@ -12,9 +12,9 @@
 
     <div id="setup-container">
       <label for="category-input">Enter a category:</label>
-      <input type="text" id="category-input" placeholder="Enter quiz category">
+      <input type="text" id="category-input" placeholder="Enter quiz category/topic (ex: organic chemistry)">
 
-      <label for="question-count">Number of questions:</label>
+      <label for="question-count" class="question-count">Number of questions:</label>
       <select id="question-count">
         <option value="3">3</option>
         <option value="5">5</option>
@@ -32,6 +32,7 @@
     <button id="reattempt-btn" class="btn hidden">Reattempt Quiz</button>
 
     <div id="result-container" class="hidden"></div>
+    <button id="view-answers-btn" class="btn hidden">View Correct Answers</button>
   </div>
 
   <script type="module" src="renderer.js"></script>

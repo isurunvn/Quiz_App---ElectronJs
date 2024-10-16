@@ -3,6 +3,8 @@ let score = 0;
 let quizQuestions = [];
 let category = '';
 let count = 0;
+let reviewMode = false;
+let userAnswers = [];
 
 async function fetchQuestions(category, count) {
   try {
@@ -12,7 +14,7 @@ async function fetchQuestions(category, count) {
     }
     const questions = parseQuestions(response);
     if (questions.length === 0) {
-      throw new Error("No questions generated");
+      throw new Error("No questions generated, click again 'Start Quiz' button!");
     }
     return questions;
   } catch (error) {
@@ -89,6 +91,8 @@ async function startQuiz() {
 function resetQuizState() {
   currentQuestionIndex = 0;
   score = 0;
+  reviewMode = false;
+  userAnswers = [];
   hideAllSections();
   document.getElementById('question-container').classList.remove('hidden');
   document.getElementById('answer-buttons').classList.remove('hidden');
@@ -97,7 +101,7 @@ function resetQuizState() {
 }
 
 function hideAllSections() {
-  const sections = ['setup-container', 'question-container', 'answer-buttons', 'next-btn', 'restart-btn', 'reattempt-btn', 'result-container'];
+  const sections = ['setup-container', 'question-container', 'answer-buttons', 'next-btn', 'restart-btn', 'reattempt-btn', 'result-container', 'view-answers-btn'];
   sections.forEach(id => document.getElementById(id).classList.add('hidden'));
 }
 
@@ -128,18 +132,47 @@ function showQuestion() {
     answerInput.type = 'radio';
     answerInput.name = 'answer';
     answerInput.value = answer.text;
+    
+    // Enable radio button in review mode if it was the user's answer
+    answerInput.disabled = reviewMode && userAnswers[currentQuestionIndex] !== answer.text;
+    
+    // Check the radio button if it was the user's answer
+    if (reviewMode && userAnswers[currentQuestionIndex] === answer.text) {
+      answerInput.checked = true;
+    }
 
     answerLabel.appendChild(answerInput);
     answerLabel.appendChild(document.createTextNode(answer.text));
+    
+    if (reviewMode) {
+      if (answer.correct) {
+        answerLabel.classList.add('correct-answer');
+      }
+      if (userAnswers[currentQuestionIndex] === answer.text) {
+        if (answer.correct) {
+          answerLabel.classList.add('user-correct');
+        } else {
+          answerLabel.classList.add('user-incorrect');
+        }
+      }
+    }
+    
     answerButtons.appendChild(answerLabel);
 
-    answerInput.addEventListener('change', () => {
-      document.getElementById('next-btn').disabled = false;
-      if (answer.correct) score++;
-    });
+    if (!reviewMode) {
+      answerInput.addEventListener('change', () => {
+        document.getElementById('next-btn').disabled = false;
+        userAnswers[currentQuestionIndex] = answer.text;
+        if (answer.correct) score++;
+      });
+    }
   });
 
-  document.getElementById('next-btn').disabled = true;
+  if (reviewMode) {
+    document.getElementById('next-btn').disabled = false;
+  } else {
+    document.getElementById('next-btn').disabled = !userAnswers[currentQuestionIndex];
+  }
 }
 
 function nextQuestion() {
@@ -147,7 +180,11 @@ function nextQuestion() {
   if (currentQuestionIndex < quizQuestions.length) {
     showQuestion();
   } else {
-    showResults();
+    if (reviewMode) {
+      showResults();
+    } else {
+      showResults();
+    }
   }
 }
 
@@ -155,6 +192,7 @@ function showResults() {
   hideAllSections();
   document.getElementById('restart-btn').classList.remove('hidden');
   document.getElementById('result-container').classList.remove('hidden');
+  document.getElementById('view-answers-btn').classList.remove('hidden');
 
   const resultContainer = document.getElementById('result-container');
   resultContainer.innerHTML = `Quiz completed! Your score: ${score} / ${quizQuestions.length}`;
@@ -173,7 +211,19 @@ async function reattemptQuiz() {
   }
 }
 
+function viewCorrectAnswers() {
+  reviewMode = true;
+  currentQuestionIndex = 0;
+  hideAllSections();
+  document.getElementById('question-container').classList.remove('hidden');
+  document.getElementById('answer-buttons').classList.remove('hidden');
+  document.getElementById('next-btn').classList.remove('hidden');
+  document.getElementById('next-btn').textContent = currentQuestionIndex === quizQuestions.length - 1 ? 'Finish Review' : 'Next Question';
+  showQuestion();
+}
+
 document.getElementById('start-btn').addEventListener('click', startQuiz);
 document.getElementById('next-btn').addEventListener('click', nextQuestion);
 document.getElementById('restart-btn').addEventListener('click', restartQuiz);
 document.getElementById('reattempt-btn').addEventListener('click', reattemptQuiz);
+document.getElementById('view-answers-btn').addEventListener('click', viewCorrectAnswers);
